@@ -15,7 +15,7 @@ const rssParser = new Parser();
 const CONFIG = {
   NAVER_CLIENT_ID: process.env.NAVER_CLIENT_ID || 'WsS5zQq6UET5SNzjN0jq',
   NAVER_CLIENT_SECRET: process.env.NAVER_CLIENT_SECRET || 'w92PtEgAKi',
-  INSTAGRAM_RSS_URL: process.env.INSTAGRAM_RSS_URL || '',
+  INSTAGRAM_RSS_URL: process.env.INSTAGRAM_RSS_URL || 'https://rss.app/feeds/xWmi4R4ZOPbcsOAG.xml',
   PORT: process.env.PORT || 3000,
 };
 
@@ -267,36 +267,21 @@ async function fetchInstagramPosts() {
     }
     
     const posts = feed.items.slice(0, CONSTANTS.LIMITS.POSTS_COUNT).map(item => {
-      const rawTitle = item.title || 'Instagram 게시물';
-      const rawDescription = cleanHtml(item.contentSnippet || item.content || item.description || '');
+      // RSS description에서 실제 캡션 추출 (HTML 제거)
+      const rawCaption = cleanHtml(item.contentSnippet || item.content || item.description || '');
       
-      // 제목: 첫 줄만 사용
-      let title = rawTitle.split('\n')[0].trim();
-      title = truncateText(title, CONSTANTS.LIMITS.TITLE_LENGTH);
-      
-      // 설명: 제목 제외, 해시태그 제거
-      let description = rawDescription
-        .replace(rawTitle, '')
-        .replace(/#[^\s#]+/g, '')
-        .replace(/\s+/g, ' ')
+      // 해시태그와 불필요한 공백 제거
+      let caption = rawCaption
+        .replace(/#[^\s#]+/g, '')  // 해시태그 제거
+        .replace(/\s+/g, ' ')       // 여러 공백을 하나로
         .trim();
       
-      // 설명이 짧으면 원본의 처음 3줄 사용
-      if (description.length < 20) {
-        description = rawDescription
-          .split('\n')
-          .slice(0, 3)
-          .join(' ')
-          .replace(/#[^\s#]+/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-      }
-      
-      description = truncateText(description, 150) || CONSTANTS.MESSAGES.NO_CONTENT;
+      // 캡션이 너무 길면 자르기
+      caption = truncateText(caption, 150) || CONSTANTS.MESSAGES.NO_CONTENT;
       
       return {
-        title: title,
-        description: description,
+        title: '인스타그램 게시물',  // 간단한 라벨
+        description: caption,          // 실제 캡션
         link: item.link || item.guid || '',
       };
     });
