@@ -419,8 +419,12 @@ app.get('/', (req, res) => {
 });
 
 // 서버 시작
-app.listen(CONFIG.PORT, () => {
-  console.log(`Server listening on port ${CONFIG.PORT}`);
-  console.log(`카페 URL: ${CONSTANTS.CAFE.URL}`);
-  console.log(`인스타그램: ${CONSTANTS.INSTAGRAM.USERNAME}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(CONFIG.PORT, () => {
+    console.log(`Server listening on port ${CONFIG.PORT}`);
+    console.log(`카페 URL: ${CONSTANTS.CAFE.URL}`);
+    console.log(`인스타그램: ${CONSTANTS.INSTAGRAM.USERNAME}`);
+  });
+}
+
+module.exports = app;
