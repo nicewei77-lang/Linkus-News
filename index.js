@@ -4,6 +4,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
 const Parser = require('rss-parser');
+const { waitUntil } = require('@vercel/functions');
 
 // ==================== 설정 ====================
 
@@ -381,22 +382,24 @@ app.post('/linkus-news', async (req, res) => {
       data: { text: CONSTANTS.MESSAGES.LOADING },
     });
     
-    // 비동기로 데이터 처리 및 콜백 전송
-    (async () => {
-      try {
-        console.log('>>> 비동기 처리 시작');
-        const message = await getFormattedNews();
-        await sendCallbackResponse(callbackUrl, createKakaoResponse(message));
-        console.log('>>> 콜백 응답 전송 완료');
-      } catch (error) {
-        console.error('>>> 처리 중 오류:', error);
+    // Vercel waitUntil: 응답 후에도 백그라운드 작업 유지
+    waitUntil(
+      (async () => {
         try {
-          await sendCallbackResponse(callbackUrl, createKakaoResponse(CONSTANTS.MESSAGES.ERROR));
-        } catch (callbackErr) {
-          console.error('콜백 오류 응답 전송 실패:', callbackErr);
+          console.log('>>> 비동기 처리 시작');
+          const message = await getFormattedNews();
+          await sendCallbackResponse(callbackUrl, createKakaoResponse(message));
+          console.log('>>> 콜백 응답 전송 완료');
+        } catch (error) {
+          console.error('>>> 처리 중 오류:', error);
+          try {
+            await sendCallbackResponse(callbackUrl, createKakaoResponse(CONSTANTS.MESSAGES.ERROR));
+          } catch (callbackErr) {
+            console.error('콜백 오류 응답 전송 실패:', callbackErr);
+          }
         }
-      }
-    })();
+      })()
+    );
     
     return;
   }
